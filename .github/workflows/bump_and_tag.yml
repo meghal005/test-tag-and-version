@@ -1,0 +1,61 @@
+# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
+# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
+
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  tag_release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # Use separate GIT token so that pushing the release causes more actions to run.
+          token: ${{ secrets.TAG_RELEASE_GITHUB_TOKEN }}
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Tag/Push
+        run: |
+          mvn versions:set -DremoveSnapshot=true -DgenerateBackupPoms=false
+          MVN_VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`
+          git tag "v$MVN_VERSION"
+          git push origin "v$MVN_VERSION"
+
+  bump_snapshot_version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # Use token so we can bypass main branch protection rules
+          token: ${{ secrets.TAG_RELEASE_GITHUB_TOKEN }}
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Bump to next version, Commit and push
+        run: |
+          mvn release:update-versions
+          MVN_VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`
+          git add -u
+          
+          git config --global user.email "ci@github.com"
+          git config --global user.name "CI/CD"
+          
+          git commit -m "[ci skip] Bumping version to - $MVN_VERSION"
+          git push
