@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Semantic Release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          npx semantic-release > release_output.log
+          VERSION=$(grep "Release version" release_output.log | awk '{print $3}')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: |
+          echo "Building Docker image with version $VERSION"
+          docker build -t myapp:$VERSION .
+
+      - name: Push Docker image
+        run: |
+          echo "Pushing Docker image with version $VERSION"
+          docker tag myapp:$VERSION myrepo/myapp:$VERSION
+          docker push myrepo/myapp:$VERSION
+
+      - name: Notify (optional)
+        run: echo "Build and push complete for version $VERSION"
