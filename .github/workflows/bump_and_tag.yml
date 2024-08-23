@@ -14,11 +14,10 @@ jobs:
     permissions:
       contents: write
 
+
     steps:
       - uses: actions/checkout@v3
-        with:
-          # Use separate GIT token so that pushing the release causes more actions to run.
-          token: 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
+
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
@@ -39,9 +38,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        with:
-          # Use token so we can bypass main branch protection rules
-          token: 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
+
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
