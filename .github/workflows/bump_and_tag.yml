@@ -51,8 +51,8 @@ jobs:
           MVN_VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`
           git add -u
           
-          git config --global user.email "ci@github.com"
-          git config --global user.name "CI/CD"
+          git config --global user.email "${{ github.actor }}@github.com"
+          git config --global user.name "${{ github.actor }}"
           
           git commit -m "[ci skip] Bumping version to - $MVN_VERSION"
           git push
